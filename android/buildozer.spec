@@ -49,8 +49,8 @@ android.minapi = 23
 android.arch = arm64-v8a
 android.enable_androidx = True
 
-# 用 p4a 主线。稳定版对 android.api 35 的支持可能滞后，
-# 若上面指定的 api 报错，取消下面这行的注释
+# 用 p4a 主线（已启用）：稳定版 p4a 对 android.api 35 的支持可能滞后。
+# 若构建报 "Could not find android api 35"，就是把 android.api 降到 33 再试。
 p4a.branch = master
 
 [buildozer]

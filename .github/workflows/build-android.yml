@@ -33,7 +33,11 @@ jobs:
   # ---------------------------------------------------------------------------
   build:
     needs: test-core
-    runs-on: ubuntu-latest
+    # 必须用 22.04：buildozer / python-for-android 在 24.04 上是坏的
+    # （libtinfo5 被移除，且编译 python recipe 时会撞 glibc 报错）。
+    # 22.04 是官方安装文档验证过的版本。
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
     defaults:
       run:
         working-directory: ./android
@@ -71,7 +75,11 @@ jobs:
           pip install buildozer cython
 
       - name: 构建 APK（首次约 20-40 分钟）
-        run: buildozer -v android debug
+        # yes | 是为了自动接受 Android SDK 许可证，否则会卡在交互提示上直到超时。
+        # 关掉 pipefail：yes 被 SIGPIPE 结束会返回 141，否则会让整步误判为失败。
+        run: |
+          set +o pipefail
+          yes 2>/dev/null | buildozer -v android debug
 
       - name: 上传 APK（构建产物，90 天后过期）
         uses: actions/upload-artifact@v4
