@@ -48,6 +48,13 @@ jobs:
         with:
           python-version: '3.11'
 
+      # gradle 8.0.2 的 Android 插件必须跑在 Java 17 上，
+      # 而 ubuntu-22.04 机器默认 JAVA_HOME 指向 Java 11，不设这步必挂
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: 安装系统依赖
         run: |
           sudo apt-get update
