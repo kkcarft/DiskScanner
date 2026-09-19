@@ -38,20 +38,22 @@ android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERN
 # ---------------------------------------------------------------------------
 # Android 构建参数
 # ---------------------------------------------------------------------------
-# api    = 编译目标 SDK。MANAGE_EXTERNAL_STORAGE 需要 30+，这里直接对齐最新
-# minapi = 最低可安装版本。低于 30 的设备走旧的读写存储权限，代码里有分支处理
+# api    = 编译目标 SDK。用 33：这是 python-for-android 官方 RECOMMENDED_TARGET_API，
+#          比追最新更稳。MANAGE_EXTERNAL_STORAGE 只需要 30+，33 完全够。
+# minapi = 最低可安装版本（= Android 7.0）。
+#          【踩过的坑】这个值不能低于 24。p4a 的 python3 recipe 装的是 CPython 3.14，
+#          其 remote_debugging.c 用到 preadv / pwritev，而 NDK 的 API 23 sysroot
+#          里没有这两个函数，编译会直接报
+#          "call to undeclared function 'preadv'"。24 起才有。
 # arch   = arm64-v8a 覆盖几乎所有现役手机；需要覆盖老设备可再加 armeabi-v7a
-#
-# 注意：如果 CI 报 "Could not find android api 35" 之类错误，
-#       多半是 python-for-android 版本太旧 —— 把下面 p4a.branch 打开即可。
-android.api = 35
-android.minapi = 23
+android.api = 33
+android.minapi = 24
 android.arch = arm64-v8a
 android.enable_androidx = True
 
-# 用 p4a 主线（已启用）：稳定版 p4a 对 android.api 35 的支持可能滞后。
-# 若构建报 "Could not find android api 35"，就是把 android.api 降到 33 再试。
-p4a.branch = master
+# 不要开 p4a.branch = master。主线会拉到还没验证过的 CPython / NDK 组合。
+# 留空即用 PyPI 上的正式版 python-for-android（CI 里显式锁 2026.5.9）。
+# p4a.branch = master
 
 [buildozer]
 
