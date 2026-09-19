@@ -1,0 +1,88 @@
+name: Build Android APK
+
+# 触发条件：android/ 目录有改动，或手动点 Run workflow
+on:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/build-android.yml'
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 第一关：核心逻辑测试（约 30 秒）
+  # ---------------------------------------------------------------------------
+  # 放最前面是因为安卓构建要 20-40 分钟。如果核心逻辑有问题，
+  # 应该在这里 30 秒内就失败，而不是让人等半小时才发现。
+  test-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 运行核心逻辑验证
+        run: python android/test_core.py
+
+  # ---------------------------------------------------------------------------
+  # 第二关：打包 APK
+  # ---------------------------------------------------------------------------
+  build:
+    needs: test-core
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装系统依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake \
+            libffi-dev libssl-dev libsdl2-dev libsdl2-image-dev \
+            libsdl2-mixer-dev libsdl2-ttf-dev
+
+      - name: 缓存 buildozer（SDK / NDK / 已编译 recipe）
+        # 首次构建会下载约 2-5GB 的 Android SDK 与 NDK。缓存后后续构建
+        # 能省掉这一步。GitHub 单仓库缓存上限 10GB，超了会自动跳过。
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            android/.buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('android/buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
+      - name: 安装 buildozer
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer cython
+
+      - name: 构建 APK（首次约 20-40 分钟）
+        run: buildozer -v android debug
+
+      - name: 上传 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: diskscanner-debug
+          path: android/bin/*.apk
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: 构建日志（失败时便于定位）
+        if: failure()
+        run: |
+          echo "===== buildozer 日志末尾 ====="
+          tail -n 200 .buildozer/logs/*.log 2>/dev/null || true
+          echo "===== 已安装的 SDK 平台 ====="
+          ls ~/.buildozer/android/platform/android-sdk/platforms 2>/dev/null || true
+          echo "===== 已安装的 NDK ====="
+          ls ~/.buildozer/android/platform/android-sdk/ndk 2>/dev/null || true

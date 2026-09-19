@@ -1,0 +1,9 @@
+# buildozer 会在这里下 Android SDK/NDK，可达数 GB，绝不入库
+.buildozer/
+
+# 构建产物
+bin/
+build/
+
+__pycache__/
+*.pyc

@@ -1,7 +1,12 @@
 # ---- 打包产物（不进版本库）----
+# *.spec 排除的是 PyInstaller 生成的临时 spec，不是手写的打包配置
 dist/
 build/
 *.spec
+
+# 例外：buildozer 配置是手写的、CI 打包必需，必须入库。
+# 不加这条，*.spec 会把它一起忽略掉，GitHub Actions 会因缺配置直接失败。
+!android/buildozer.spec
 
 # ---- Python ----
 __pycache__/
