@@ -8,6 +8,10 @@ on:
       - '.github/workflows/build-android.yml'
   workflow_dispatch:
 
+# 允许把 APK 自动发布成 Release（GITHUB_TOKEN 默认只读，这里要放开写权限）
+permissions:
+  contents: write
+
 jobs:
   # ---------------------------------------------------------------------------
   # 第一关：核心逻辑测试（约 30 秒）
@@ -69,13 +73,32 @@ jobs:
       - name: 构建 APK（首次约 20-40 分钟）
         run: buildozer -v android debug
 
-      - name: 上传 APK
+      - name: 上传 APK（构建产物，90 天后过期）
         uses: actions/upload-artifact@v4
         with:
           name: diskscanner-debug
           path: android/bin/*.apk
           retention-days: 90
           if-no-files-found: error
+
+      - name: 发布 Release（APK 长期保留）
+        # 构建产物有 90 天有效期，Release 里的附件不会过期，
+        # 所以 APK 同时发一份到 Release，方便长期下载。
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v0.1.0-${{ github.run_number }}
+          name: Android APK v0.1.0 (#${{ github.run_number }})
+          body: |
+            安卓版存储扫描 APK，由 GitHub Actions 自动构建。
+
+            - 核心逻辑复用 Windows 版（corescan.py，程序化抽取未改写）
+            - 需要 Android 7.0+，安装后首次打开要到系统设置开启「所有文件访问」
+            - 扫码范围仅限共享存储，各 App 私有数据受系统限制无法枚举
+
+            artifact 里的同名 APK 90 天后过期，本 Release 附件长期有效。
+          files: android/bin/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 构建日志（失败时便于定位）
         if: failure()
