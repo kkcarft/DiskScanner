@@ -7,6 +7,21 @@
 > thread pool, renders the result as a coloured tree, and supports in-place filtering, sorting
 > and file operations (copy path / reveal in Explorer / delete to Recycle Bin).
 
+同一个扫描核心还有 [Android 版](#android-版)，用 Kivy + Buildozer 打包成 APK，
+由 GitHub Actions 云端构建。
+
+---
+
+## 下载
+
+| 平台 | 文件 | 说明 |
+| --- | --- | --- |
+| Windows 10/11 | [`DiskScanner.exe`](https://github.com/kkcarft/DiskScanner/releases/download/v1.0.0/DiskScanner.exe) | 单文件绿色版，双击即用，不需要装 Python |
+| Android 7.0+ | `diskscanner-*.apk` | 由 GitHub Actions 自动构建，见下方 |
+| 全部源码 | [Source code (zip)](https://github.com/kkcarft/DiskScanner/archive/refs/tags/v1.0.0.zip) | 也可以直接 `git clone` |
+
+最新版始终在 [Releases 页面](https://github.com/kkcarft/DiskScanner/releases)。
+
 ---
 
 ## 界面预览
@@ -217,8 +232,55 @@ DiskScanner/
 ├─ 设计说明.md              完整设计文档（交互流程 / 确认机制 / 边界情况）
 ├─ sample_marks.png        界面预览：色标样式
 ├─ sample_values.png       界面预览：带数值样式
-└─ sample_filter_compare.png  界面预览：筛选前后对比
+├─ sample_filter_compare.png  界面预览：筛选前后对比
+├─ android/
+│  ├─ corescan.py            扫描核心（从 scanner.py 程序化抽取，纯标准库）
+│  ├─ main.py                安卓端 UI（Kivy）
+│  ├─ buildozer.spec         打包配置
+│  ├─ test_core.py           核心逻辑验证（47 项断言）
+│  └─ smoke_ui.py            UI 冒烟测试
+└─ .github/workflows/build-android.yml  云端打包 APK
 ```
+
+---
+
+## Android 版
+
+扫描核心 `android/corescan.py` 是从 `scanner.py` **程序化抽取**出来的，没有手工改写，
+所以两个平台扫出来的口径完全一致（体积聚合、时间档位、色标阈值都一样）。
+UI 用 Kivy 重写，打包走 Buildozer，在 GitHub Actions 上云端完成。
+
+### 怎么拿到 APK
+
+不用本地装 SDK/NDK（那要 10GB+）。推代码到 `main` 后
+[Build Android APK](https://github.com/kkcarft/DiskScanner/actions) 工作流会自动跑，
+约 20~40 分钟出包并发布到 Releases；也可以在 Actions 页面手动点 `Run workflow`。
+
+### 和 Windows 版的差异
+
+| 项 | Windows 版 | Android 版 |
+| --- | --- | --- |
+| 扫描范围 | 选盘符 | 没有盘符概念，直接扫整个共享存储（`/storage/emulated/0`）和外置 SD 卡 |
+| 多选 | `Ctrl` / `Shift` | 勾选框 |
+| 删除 | 回收站 / 永久删除 | 只有永久删除（安卓没有统一回收站），三层确认 |
+| 复制路径 | 系统剪贴板 | 安卓剪贴板（`ClipboardManager`） |
+| 打开所在位置 | 有 | 无（安卓没有对应能力） |
+
+### 安卓上的硬限制
+
+- **各 App 的私有数据目录（`/data/data/...`、`/storage/emulated/0/Android/data/...`）枚举不到。**
+  这是系统沙箱限制，不是权限没给够 —— 任何第三方 App 都扫不到，包括系统自带的文件管理器。
+  所以系统设置里看到的「已用空间」和本工具扫出来的总量会对不上，差的那部分就是私有数据。
+- `MANAGE_EXTERNAL_STORAGE` **不允许用弹窗申请**，只能用户自己进
+  `系统设置 → 应用 → 存储扫描 → 所有文件访问` 打开。不给也能用，但只能扫到公共目录。
+- 删除后会调用 `MediaScannerConnection` 通知系统刷新，否则相册里会残留缩略图。
+
+### 为什么不用 PySide6
+
+PySide6 官方的 `pyside6-android-deploy` 在 PyPI 上并不存在（404），
+meta 包里不含任何 Android 产物；`qtpip` 只对商业授权用户提供轮子。
+LGPL 用户想用 Qt for Android 得自己在 Linux 上交叉编译 Qt，耗时数小时。
+Kivy + Buildozer 是唯一能在 CI 里一键跑通的路子。
 
 ---
 
