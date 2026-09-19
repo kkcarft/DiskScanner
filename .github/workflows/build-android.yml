@@ -70,11 +70,13 @@ jobs:
             ${{ runner.os }}-buildozer-
 
       - name: 安装 buildozer
-        # 版本全部锁死。buildozer 1.6.0 要求 cython<3.0；
-        # p4a 锁正式版而不是 master，否则会拉到没验证过的 CPython/NDK 组合。
+        # 版本全部锁死，这是社区验证最充分的一套组合：
+        #   buildozer 1.5.0 + p4a 2024.1.21 = Python 3.11.5 + Kivy 2.3.0 + NDK r25b
+        # （2026.5.9 那套 Python 3.14.2 + Kivy 2.3.1 在 Cython 编译阶段会无声挂掉）
+        # buildozer 1.5.0 依赖 distutils，所以上面 setup-python 必须用 3.11
         run: |
           python -m pip install --upgrade pip
-          pip install buildozer==1.6.0 "cython<3.0" python-for-android==2026.5.9
+          pip install buildozer==1.5.0 "cython<3.0" python-for-android==2024.1.21
 
       - name: 构建 APK（首次约 20-40 分钟）
         # yes | 是为了自动接受 Android SDK 许可证，否则会卡在交互提示上直到超时。
