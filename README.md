@@ -17,7 +17,7 @@
 | 平台 | 文件 | 说明 |
 | --- | --- | --- |
 | Windows 10/11 | [`DiskScanner.exe`](https://github.com/kkcarft/DiskScanner/releases/download/v1.0.0/DiskScanner.exe) | 单文件绿色版，双击即用，不需要装 Python |
-| Android 7.0+ | `diskscanner-*.apk` | 由 GitHub Actions 自动构建，见下方 |
+| Android 7.0+ | [`diskscanner-0.1.0-arm64-v8a-debug.apk`](https://github.com/kkcarft/DiskScanner/releases/download/v1.0.0/diskscanner-0.1.0-arm64-v8a-debug.apk) | arm64，18 MB，由 GitHub Actions 云端构建 |
 | 全部源码 | [Source code (zip)](https://github.com/kkcarft/DiskScanner/archive/refs/tags/v1.0.0.zip) | 也可以直接 `git clone` |
 
 最新版始终在 [Releases 页面](https://github.com/kkcarft/DiskScanner/releases)。
