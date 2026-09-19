@@ -1,0 +1,5 @@
+# 运行时依赖
+PyQt6>=6.5
+
+# 打包依赖（仅 build.bat 需要，可单独安装）
+# pyinstaller>=6.0
