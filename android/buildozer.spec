@@ -51,9 +51,10 @@ android.minapi = 24
 android.arch = arm64-v8a
 android.enable_androidx = True
 
-# 不要开 p4a.branch = master。主线会拉到还没验证过的 CPython / NDK 组合。
-# 留空即用 PyPI 上的正式版 python-for-android（CI 里显式锁 2026.5.9）。
-# p4a.branch = master
+# 【重要】buildozer 不用 pip 里装的 p4a，它会自己 git clone 一份再 checkout 这个分支。
+# 不写的话默认 master —— 那会拉到 CPython 3.14 + NDK r28c 的激进组合，构建会挂。
+# 这里钉到 v2024.01.21（= Python 3.11.5 + Kivy 2.3.0 + NDK r25b，社区验证最充分的组合）
+p4a.branch = v2024.01.21
 
 [buildozer]
 
